@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Image Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>LLM Image Editor</h1>
+    <form id="uploadForm">
+        <input type="file" name="file" id="fileInput" required />
+        <select name="task" id="taskSelect" required>
+            <option value="">Choose a task</option>
+            <option value="blur background">Blur Background</option>
+            <option value="remove background">Remove Background</option>
+        </select>
+        <button type="submit">Upload</button>
+    </form>
+    <img id="resultImage" alt="Processed image will appear here" />
+    <script src="App.js"></script>
+</body>
+</html>
