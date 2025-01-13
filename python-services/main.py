@@ -1,75 +1,25 @@
+# python-services/main.py
+from modules.yolo_processor import detect_objects
+from modules.sam_processor import segment_objects
+from modules.overlay_masks import overlay_masks
+import cv2
 
-# from fastapi import FastAPI, File, Form, UploadFile
-# import logging
+def main(image_path):
+    # Step 1: Detect objects using YOLO
+    print("Detecting objects...")
+    boxes = detect_objects(image_path)
+    print(f"Detected bounding boxes: {boxes}")
 
-# app = FastAPI()
+    # Step 2: Segment objects using SAM
+    print("Segmenting objects...")
+    masks, image = segment_objects(image_path, boxes)
+    print("Segmentation complete.")
 
-# # Configure logging
-# logging.basicConfig(level=logging.INFO)
+    # Step 3: Overlay masks and save result
+    print("Overlaying masks...")
+    result = overlay_masks(image, masks)
+    cv2.imwrite("segmented_image.jpg", result)
+    print("Result saved as 'segmented_image.jpg'.")
 
-# @app.post("/process-image")
-# async def process_image(file: UploadFile = File(...), task: str = Form(...)):
-#     try:
-#         # Log the received file and task
-#         logging.info(f"File Name: {file.filename}")
-#         logging.info(f"Content Type: {file.content_type}")
-#         logging.info(f"Task: {task}")
-
-#         # Check if the file or task is missing
-#         if not file or file.filename == "":
-#             return {"error": "No file uploaded"}
-#         if not task:
-#             return {"error": "No task provided"}
-
-#         # Read the file's content (optional for debugging)
-#         file_content = await file.read()
-#         logging.info(f"File Size: {len(file_content)} bytes")
-
-#         # Return a success response
-#         return {
-#             "message": "File received successfully",
-#             "filename": file.filename,
-#             "content_type": file.content_type,
-#             "task": task,
-#         }
-
-#     except Exception as e:
-#         logging.error(f"Error while processing: {e}")
-#         return {"error": str(e)}
-
-
-
-
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import FileResponse
-import shutil
-from image_processor import process_image_logic
-
-app = FastAPI()
-
-@app.post("/process-image")
-async def process_image(file: UploadFile = File(...), task: str = Form(...)):
-    temp_file_path = f"/tmp/{file.filename}"
-    with open(temp_file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Process the image
-    processed_image_path = f"/tmp/processed_{file.filename}"
-    process_image_logic(temp_file_path, processed_image_path, task)
-
-    # Return processed image
-    return FileResponse(processed_image_path, media_type="image/jpeg")
-
-from fastapi import FastAPI
-from image_processor import process_image_logic
-
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Image Processing API"}
-
-@app.post("/process-image")
-async def process_image(file: bytes, task: str):
-    return process_image_logic(file, task)
-
+if __name__ == "__main__":
+    main("image.jpg")  # Replace with your input image

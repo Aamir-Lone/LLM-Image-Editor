@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\LLM image editor\venv
+set VIRTUAL_ENV=C:\LLM_image_editor\venv
 
 if not defined PROMPT set PROMPT=$P$G
 
