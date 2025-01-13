@@ -1,6 +1,7 @@
-models
+python-services/models
+*venv
+.venv
 venv
-/venv
-.VENV/
+.VENV
 .log
 .tmp
