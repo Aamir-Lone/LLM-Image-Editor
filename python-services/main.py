@@ -3,6 +3,7 @@ from modules.yolo_processor import detect_objects
 from modules.sam_processor import segment_objects
 from modules.overlay_masks import overlay_masks
 import cv2
+import os
 
 def main(image_path):
     # Step 1: Detect objects using YOLO
@@ -18,6 +19,7 @@ def main(image_path):
     # Step 3: Overlay masks and save result
     print("Overlaying masks...")
     result = overlay_masks(image, masks)
+
     cv2.imwrite("segmented_image.jpg", result)
     print("Result saved as 'segmented_image.jpg'.")
 
