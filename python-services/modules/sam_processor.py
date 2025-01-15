@@ -28,6 +28,7 @@ def segment_objects(image_path, boxes):
 
     Returns:
         list: Masks for each bounding box.
+        numpy.ndarray: Original image.
     """
     # Load image
     image = cv2.imread(image_path)
@@ -39,10 +40,9 @@ def segment_objects(image_path, boxes):
     # Segment objects
     masks = []
     for box in boxes:
-        # input_box = [box[0], box[1], box[2], box[3]]
-        input_box = np.array(box).reshape(1, -1)
-
+        input_box = np.array(box).reshape(1, -1)  # Convert to [1, 4] format
         mask, _, _ = predictor.predict(box=input_box)
-        masks.append(mask)
+        masks.append(mask.astype(np.uint8))  # Ensure masks are uint8
 
     return masks, image
+
