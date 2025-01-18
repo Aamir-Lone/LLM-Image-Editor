@@ -16,6 +16,7 @@ def remove_background(image, masks, background_color=(255, 255, 255)):
     if image is None or len(image.shape) != 3:
         raise ValueError(f"Invalid image: {image}")
 
+    # Initialize combined mask to zero (black)
     combined_mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
 
     # Process each mask
@@ -27,40 +28,41 @@ def remove_background(image, masks, background_color=(255, 255, 255)):
         if len(mask.shape) == 3:
             mask = np.max(mask, axis=0)  # Collapse multi-channel mask to single-channel
 
-        # Visualize mask for debugging
-        print(f"Mask {i} sum: {np.sum(mask)}")  # Print sum of mask to verify non-zero values
-        cv2.imwrite(f"mask_{i}.png", mask * 255)  # Save mask image for visual inspection
-
         if len(mask.shape) != 2:
             raise ValueError(f"Processed mask is not 2D: {mask.shape}")
 
         # Resize mask to match the image dimensions
         resized_mask = cv2.resize(mask.astype(np.uint8), (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
+
+        # Combine all masks into a single mask
         combined_mask = cv2.bitwise_or(combined_mask, resized_mask)
 
-    # Visualize the combined mask
-    print(f"Combined mask sum: {np.sum(combined_mask)}")
-    cv2.imwrite("combined_mask.png", combined_mask * 255)  # Save combined mask for inspection
+    # Debugging: Save and inspect the combined mask
+    cv2.imwrite("combined_mask_debug.png", combined_mask * 255)
 
     # Create an inverted mask (background is 1, objects are 0)
     inverted_mask = cv2.bitwise_not(combined_mask)
 
-    # Create a background image
-    background = np.full_like(image, background_color, dtype=np.uint8)
+    # Debugging: Save the inverted mask
+    cv2.imwrite("inverted_mask_debug.png", inverted_mask * 255)
 
-    # Mask the original image and the background
+    # Extract the foreground using the combined mask
     foreground = cv2.bitwise_and(image, image, mask=combined_mask)
+
+    # Debugging: Save the foreground
+    cv2.imwrite("foreground_debug.png", foreground)
+
+    # Create a background image with the specified color
+    background = np.full_like(image, background_color, dtype=np.uint8)
     background = cv2.bitwise_and(background, background, mask=inverted_mask)
 
-    # Combine the foreground and background
+    # Debugging: Save the background
+    cv2.imwrite("background_debug.png", background)
+
+    # Combine the foreground and background to get the final result
     result = cv2.add(foreground, background)
 
-    # If you want transparency instead of a solid background color, you could add an alpha channel.
-    # result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
-    # result[:, :, 3] = combined_mask  # Add the mask as alpha channel for transparency
-
-    # Visualize the final result
-    print(f"Foreground sum: {np.sum(foreground)}")
-    print(f"Background sum: {np.sum(background)}")
+    # Debugging: Save the final result
+    cv2.imwrite("final_debug_result.png", result)
 
     return result
