@@ -2,6 +2,7 @@ from modules.yolo_processor import detect_objects
 from modules.sam_processor import segment_objects
 from modules.overlay_masks import overlay_masks
 from modules.background_removal import remove_background
+from modules.background_blur import blur_background
 import cv2
 
 def main(image_path):
@@ -29,7 +30,13 @@ def main(image_path):
     cv2.imwrite("background_removed_image.jpg", result)
     print("Background removed image saved as 'background_removed_image.jpg'.")
 
-    # Optional Step 4: Overlay masks for visualization
+    # Step 4: Blur background
+    print("Blurring background...")
+    background_blurred_image = blur_background(image, masks)
+    cv2.imwrite("background_blurred_image.jpg", background_blurred_image)
+    print("Background blurred image saved as 'background_blurred_image.jpg'.")
+
+    # Optional Step 5: Overlay masks for visualization
     print("Overlaying masks for visualization...")
     overlayed_image = overlay_masks(image, masks)
     cv2.imwrite("segmented_image.jpg", overlayed_image)
