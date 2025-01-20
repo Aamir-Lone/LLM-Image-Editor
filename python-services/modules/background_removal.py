@@ -16,53 +16,55 @@ def remove_background(image, masks, background_color=(255, 255, 255)):
     if image is None or len(image.shape) != 3:
         raise ValueError(f"Invalid image: {image}")
 
-    # Initialize combined mask to zero (black)
+    # Initialize a blank combined mask
     combined_mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
 
-    # Process each mask
+    # Process and combine each mask
     for i, mask in enumerate(masks):
         if mask is None:
             raise ValueError(f"Invalid mask: {mask}")
 
-        # Handle multi-channel masks by converting to single-channel
+        # Convert multi-channel mask to single-channel
         if len(mask.shape) == 3:
-            mask = np.max(mask, axis=0)  # Collapse multi-channel mask to single-channel
+            mask = np.max(mask, axis=0)
 
-        if len(mask.shape) != 2:
-            raise ValueError(f"Processed mask is not 2D: {mask.shape}")
+        # Normalize mask to binary (0 or 1)
+        binary_mask = (mask > 0).astype(np.uint8)
 
-        # Resize mask to match the image dimensions
-        resized_mask = cv2.resize(mask.astype(np.uint8), (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
+        # Save individual binary mask for debugging
+        cv2.imwrite(f"debug_mask_{i}.png", binary_mask * 255)
 
-        # Combine all masks into a single mask
-        combined_mask = cv2.bitwise_or(combined_mask, resized_mask)
+        # Combine masks using logical OR
+        combined_mask = np.logical_or(combined_mask, binary_mask).astype(np.uint8)
 
-    # Debugging: Save and inspect the combined mask
-    cv2.imwrite("combined_mask_debug.png", combined_mask * 255)
-
-    # Create an inverted mask (background is 1, objects are 0)
-    inverted_mask = cv2.bitwise_not(combined_mask)
-
-    # Debugging: Save the inverted mask
-    cv2.imwrite("inverted_mask_debug.png", inverted_mask * 255)
+    # Debugging: Save the combined binary mask
+    cv2.imwrite("debug_combined_mask.png", combined_mask * 255)
 
     # Extract the foreground using the combined mask
     foreground = cv2.bitwise_and(image, image, mask=combined_mask)
 
     # Debugging: Save the foreground
-    cv2.imwrite("foreground_debug.png", foreground)
+    cv2.imwrite("debug_foreground.png", foreground)
 
-    # Create a background image with the specified color
+    # Create a solid background with the specified color
     background = np.full_like(image, background_color, dtype=np.uint8)
+
+    # Create an inverted mask for the background
+    inverted_mask = cv2.bitwise_not((combined_mask * 255).astype(np.uint8))
+
+    # Debugging: Save the inverted mask
+    cv2.imwrite("debug_inverted_mask.png", inverted_mask)
+
+    # Apply the inverted mask to the background
     background = cv2.bitwise_and(background, background, mask=inverted_mask)
 
-    # Debugging: Save the background
-    cv2.imwrite("background_debug.png", background)
+    # Debugging: Save the isolated background
+    cv2.imwrite("debug_background.png", background)
 
-    # Combine the foreground and background to get the final result
+    # Combine the foreground and background
     result = cv2.add(foreground, background)
 
     # Debugging: Save the final result
-    cv2.imwrite("final_debug_result.png", result)
+    cv2.imwrite("debug_final_result.png", result)
 
     return result

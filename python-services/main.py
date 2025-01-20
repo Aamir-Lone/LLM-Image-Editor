@@ -36,3 +36,7 @@ def main(image_path):
     print("Segmented image saved as 'segmented_image.jpg'.")
 if __name__ == "__main__":
     main("image.jpg")  # Replace with the path to your image
+
+
+
+
