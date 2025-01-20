@@ -32,7 +32,7 @@ def main(image_path):
 
     # Step 4: Blur background
     print("Blurring background...")
-    background_blurred_image = blur_background(image, masks)
+    background_blurred_image = blur_background(image, masks,blur_strength=(35, 35))
     cv2.imwrite("background_blurred_image.jpg", background_blurred_image)
     print("Background blurred image saved as 'background_blurred_image.jpg'.")
 
