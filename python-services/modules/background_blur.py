@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def blur_background(image, masks, blur_strength=(25, 25)):
+def blur_background(image, masks, blur_strength=(35, 35)):
     """
     Blurs the background of the input image using the masks.
 
