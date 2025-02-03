@@ -127,7 +127,7 @@ def process_image(image_path, prompt):
     return result
 if __name__ == "__main__":
     image_path = "image.jpg"  # Replace with the path to your image
-    prompt = "Blur the background of this image."  # Replace with the user's prompt
+    prompt = "remove the background of this image."  # Replace with the user's prompt
     result = process_image(image_path, prompt)
     cv2.imwrite("output_image.jpg", result)
     print("Processed image saved as 'output_image.jpg'.")
