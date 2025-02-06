@@ -9,71 +9,106 @@ from modules.background_blur import blur_background
 from modules.overlay_masks import overlay_masks
 from modules.remove_object import remove_object
 from transformers import pipeline
+import os
 
-# Title of the app
-st.title("NLP-Based Image Editor")
+# Configuration
+MODEL_PATH = "models/sam_vit_h_4b8939.pth"
+YOLO_MODEL = "yolov8n.pt"
 
-# Upload image
-uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-if uploaded_file is not None:
-    # Read the image
-    image = Image.open(uploaded_file)
-    image = np.array(image)  # Convert to NumPy array for processing
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+def main():
+    st.title("NLP-Powered Image Editor")
+    st.markdown("Upload an image and describe your edits using natural language")
+    
+    # File upload
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    
+    if uploaded_file is not None:
+        # Read and display image
+        image = Image.open(uploaded_file)
+        image_np = np.array(image)
+        st.image(image_np, caption="Original Image", use_column_width=True)
+        
+        # Get user prompt
+        prompt = st.text_input("Describe your edits (e.g., 'Remove the car on the left'):")
+        
+        if prompt:
+            with st.spinner("Processing your request..."):
+                try:
+                    # Step 1: Object detection
+                    boxes, class_names = detect_objects(image_np)
+                    
+                    # Step 2: Object segmentation
+                    masks, segmented_image = segment_objects(image_np, boxes)
+                    
+                    # Step 3: Prompt interpretation
+                    action_interpreter = pipeline(
+                        "zero-shot-classification",
+                        model="typeform/distilbert-base-uncased-mnli"
+                    )
+                    
+                    # Define possible actions
+                    actions = [
+                        "remove object", "blur background", 
+                        "remove background", "highlight objects",
+                        "color adjustment", "other"
+                    ]
+                    
+                    # Get action prediction
+                    action_result = action_interpreter(prompt, actions)
+                    selected_action = action_result['labels'][0]
+                    
+                    # Display processing steps
+                    with st.expander("Processing Details"):
+                        st.write("Detected Objects:", class_names)
+                        st.write("Interpreted Action:", selected_action)
+                        st.image(segmented_image, caption="Segmented Objects")
+                    
+                    # Perform the action
+                    if "remove object" in selected_action:
+                        object_interpreter = pipeline(
+                            "zero-shot-classification",
+                            model="facebook/bart-large-mnli"
+                        )
+                        object_labels = list(set(class_names))  # Use detected classes
+                        object_result = object_interpreter(prompt, object_labels)
+                        target_object = object_result['labels'][0]
+                        
+                        if target_object in class_names:
+                            object_index = class_names.index(target_object)
+                            result = remove_object(image_np, masks, object_index)
+                        else:
+                            st.error(f"Could not find {target_object} in the image")
+                            return
+                            
+                    elif "blur background" in selected_action:
+                        result = blur_background(image_np, masks)
+                        
+                    elif "remove background" in selected_action:
+                        result = remove_background(image_np, masks)
+                        
+                    elif "highlight objects" in selected_action:
+                        result = overlay_masks(image_np, masks)
+                        
+                    else:
+                        st.error("This action is not yet supported")
+                        return
+                    
+                    # Display result
+                    st.subheader("Edited Image")
+                    st.image(result, use_column_width=True)
+                    st.success("Processing complete!")
+                    
+                    # Add download button
+                    result_pil = Image.fromarray(result)
+                    st.download_button(
+                        label="Download Result",
+                        data=cv2.imencode('.png', result)[1].tobytes(),
+                        file_name="edited_image.png",
+                        mime="image/png"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"Error processing image: {str(e)}")
 
-    # Input prompt
-    prompt = st.text_input("Enter your prompt (e.g., 'blur the background'):")
-
-    if prompt:
-        # Step 1: Detect objects using YOLO
-        boxes, class_names = detect_objects(image)
-        st.write("Detected objects:", class_names)
-
-        # Step 2: Segment objects using SAM
-        masks, segmented_image = segment_objects(image, boxes)
-        st.image(segmented_image, caption="Segmented Image", use_column_width=True)
-
-        # Step 3: Interpret the prompt using the LLM
-        classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-        candidate_labels = [
-            "remove an object", "blur the background", "remove the background", 
-            "highlight objects with masks", "change object color", "other editing"
-        ]
-        result = classifier(prompt, candidate_labels)
-        action = result['labels'][0]
-        st.write(f"Action: {action}")
-
-        # Step 4: Perform the action
-        if action == "remove an object":
-            # Extract object name from the prompt
-            object_name = classifier(prompt, candidate_labels=["person", "car", "dog", "cat", "other"])['labels'][0]
-            st.write(f"Object to remove: {object_name}")
-
-            # Find the object index
-            object_index = -1
-            for i, name in enumerate(class_names):
-                if name == object_name:
-                    object_index = i
-                    break
-
-            if object_index == -1:
-                st.error(f"Object '{object_name}' not found in the image.")
-            else:
-                # Remove the object
-                result_image = remove_object(image, masks, object_index)
-                st.image(result_image, caption="Result Image", use_column_width=True)
-
-        elif action == "blur the background":
-            result_image = blur_background(image, masks)
-            st.image(result_image, caption="Blurred Background", use_column_width=True)
-
-        elif action == "remove the background":
-            result_image = remove_background(image, masks)
-            st.image(result_image, caption="Background Removed", use_column_width=True)
-
-        elif action == "highlight objects with masks":
-            result_image = overlay_masks(image, masks)
-            st.image(result_image, caption="Highlighted Objects", use_column_width=True)
-
-        else:
-            st.error("Unsupported action.")
+if __name__ == "__main__":
+    main()
