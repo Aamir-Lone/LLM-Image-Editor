@@ -1,7 +1,18 @@
-ultralytics
-segment-anything
-torch
-torchvision
-opencv-python
-Pillow
+# ultralytics
+# segment-anything
+# torch
+# torchvision
+# opencv-python
+# Pillow
 
+
+streamlit>=1.32.0
+ultralytics>=8.0.0
+segment-anything>=1.0.0
+transformers>=4.38.0
+torch>=2.2.0
+torchvision
+opencv-python>=4.8.0
+numpy>=1.26.0
+python-dotenv>=1.0.0
+Pillow
